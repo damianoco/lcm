@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Latin Church Music</title>
+<style>
+:root{--bg:#faf7f2;--fg:#2a2420;--muted:#7a6f66;--card:#fff;--line:#e4dccf;--accent:#8a2f2f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1917;--fg:#ece5dc;--muted:#a39a90;--card:#26221f;--line:#3a342f;--accent:#e08a7a}}
+:root[data-theme="dark"]{--bg:#1c1917;--fg:#ece5dc;--muted:#a39a90;--card:#26221f;--line:#3a342f;--accent:#e08a7a}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;line-height:1.55}
+main{max-width:860px;margin:0 auto;padding:10px 16px 0;height:100%;display:flex;flex-direction:column}
+#text{flex:1;min-height:0;overflow-y:auto;padding-bottom:24px;-webkit-overflow-scrolling:touch}
+h1{font-size:1.25rem;margin:0 0 2px}
+.sub{color:var(--muted);font-size:.8rem;margin:0 0 8px}
+.tabs{flex:none;display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.tab{font:600 .95rem system-ui,sans-serif;padding:10px 14px;border:2px solid var(--accent);background:transparent;color:var(--accent);border-radius:999px;cursor:pointer}
+.tab.on{background:var(--accent);color:var(--bg)}
+.player{flex:none;aspect-ratio:16/9;width:min(100%,calc(38vh * 16 / 9));margin:0 auto;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000}
+.player iframe{width:100%;height:100%;border:0}
+.links{flex:none;margin:6px 0 12px;display:flex;gap:10px}
+.btn{flex:1;text-align:center;background:var(--accent);color:var(--bg);text-decoration:none;font-family:system-ui,sans-serif;font-weight:600;font-size:1.05rem;padding:14px 12px;border-radius:12px}
+.st{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.num{grid-column:1/-1;color:var(--accent);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin:0 0 -6px}
+.la{font-style:italic;font-size:1.05rem}
+.en{color:var(--muted)}
+.la div,.en div{margin:2px 0}
+@media (max-width:560px){.st{grid-template-columns:1fr;gap:8px}}
+.hint{flex:none;margin:0 0 8px;font:.8rem system-ui,sans-serif;color:var(--muted);text-align:center}
+.w{border-bottom:1px dotted var(--accent);cursor:pointer}
+.w.on{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+#panel{display:none;position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:2px solid var(--accent);box-shadow:0 -4px 16px rgba(0,0,0,.18);padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px))}
+#panel .in{max-width:860px;margin:0 auto;position:relative;padding-right:36px}
+#panel h2{margin:0;font-size:1.3rem;font-style:italic}
+#panel .lem{color:var(--accent);font:600 .9rem system-ui,sans-serif}
+#panel p{margin:6px 0;font-size:.95rem}
+#panel .et{color:var(--muted);font-size:.9rem}
+#px{position:absolute;right:0;top:-4px;border:0;background:none;color:var(--muted);font-size:1.8rem;line-height:1;cursor:pointer}
+.ask{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.ask a{font:600 .85rem system-ui,sans-serif;color:var(--bg);background:var(--accent);text-decoration:none;padding:9px 14px;border-radius:999px}
+body.pn #text{padding-bottom:320px}
+</style>
+</head>
+<body>
+<main>
+<h1 id="title"></h1>
+<p class="sub" id="sub"></p>
+<div class="tabs" id="pick"></div>
+<div class="player" id="player"></div>
+<div class="links" id="links"></div>
+<p class="hint" id="hint">Tap an underlined Latin word for its meaning and grammar.</p>
+<div id="text"></div>
+</main>
+<aside id="panel"><div class="in"><button type="button" id="px" aria-label="Close">&times;</button><h2 id="pw"></h2><div class="lem" id="pl"></div><p id="pm"></p><p id="pg"></p><p class="et" id="pe"></p><div class="ask" id="pa"></div></div></aside>
+<script>
+// To add a piece, copy an entry below. Latin lines separated by |, English lines by /
+const SONGS=[{
+ id:"dies-irae",title:"Dies Irae",sub:"Sequence from the Requiem Mass · Latin with English",
+ yt:"2OBB5-bP6qs",ytUrl:"https://youtu.be/2OBB5-bP6qs",
+ stanzas:[
+ ["Dies irae, dies illa|Solvet saeclum in favilla|Teste David cum Sibylla","Day of wrath, that day / will dissolve the world in ashes / as David and the Sibyl bear witness."],
+ ["Quantus tremor est futurus|Quando iudex est venturus|Cuncta stricte discussurus","How great the trembling will be / when the judge arrives / to examine everything strictly."],
+ ["Tuba mirum spargens sonum|Per sepulcra regionum|Coget omnes ante thronum","The trumpet, spreading its wondrous sound / through the tombs of every land / will drive all before the throne."],
+ ["Mors stupebit et natura|Cum resurget creatura|Iudicanti responsura","Death and nature will stand amazed / when creation rises again / to answer to the Judge."],
+ ["Liber scriptus proferetur|In quo totum continetur|Unde mundus iudicetur","A written book will be brought forth / in which everything is contained / from which the world shall be judged."],
+ ["Iudex ergo cum sedebit|Quidquid latet apparebit|Nil inultum remanebit","When the judge takes his seat / whatever is hidden will appear / nothing will remain unavenged."],
+ ["Quid sum miser tunc dicturus|Quem patronum rogaturus|Cum vix iustus sit securus","What shall I, wretched, say then? / Which advocate shall I ask / when even the just are hardly safe?"],
+ ["Rex tremendae maiestatis|Qui salvandos salvas gratis|Salva me, fons pietatis","King of fearful majesty / who freely saves those who are to be saved / save me, fount of mercy."],
+ ["Recordare, Iesu pie|Quod sum causa tuae viae|Ne me perdas illa die","Remember, kind Jesus / that I am the reason for your journey / do not lose me on that day."],
+ ["Quaerens me sedisti lassus|Redemisti crucem passus|Tantus labor non sit cassus","Seeking me, you sat down weary / you redeemed me, enduring the cross / let such toil not be in vain."],
+ ["Iuste iudex ultionis|Donum fac remissionis|Ante diem rationis","Righteous judge of vengeance / grant the gift of forgiveness / before the day of reckoning."],
+ ["Ingemisco tamquam reus|Culpa rubet vultus meus|Supplicanti parce, Deus","I groan like one condemned / my face flushes with guilt / spare the suppliant, O God."],
+ ["Qui Mariam absolvisti|Et latronem exaudisti|Mihi quoque spem dedisti","You who absolved Mary / and heard the thief / have given me hope as well."],
+ ["Preces meae non sunt dignae|Sed tu bonus fac benigne|Ne perenni cremer igne","My prayers are not worthy / but you, who are good, act kindly / that I not burn in everlasting fire."],
+ ["Inter oves locum praesta|Et ab haedis me sequestra|Statuens in parte dextra","Give me a place among the sheep / and separate me from the goats / setting me on your right hand."],
+ ["Confutatis maledictis|Flammis acribus addictis|Voca me cum benedictis","When the accursed are confounded / and consigned to bitter flames / call me with the blessed."],
+ ["Oro supplex et acclinis|Cor contritum quasi cinis|Gere curam mei finis","I pray, kneeling and bowed / my heart crushed as if to ashes / take care of my end."],
+ ["Lacrimosa dies illa|Qua resurget ex favilla|Iudicandus homo reus|Huic ergo parce, Deus","Tearful that day / on which from the ashes shall rise / guilty man, to be judged. / Spare him, then, O God."],
+ ["Pie Iesu Domine|Dona eis requiem. Amen.","Merciful Lord Jesus / grant them rest. Amen."]
+ ]
+},{
+ id:"pie-jesu",title:"Pie Jesu",sub:"Closing prayer of the Requiem · Latin with English",
+ yt:"luCw_6ns_Yc",ytUrl:"https://youtu.be/luCw_6ns_Yc",
+ gloss:{
+  pie:{l:"pius, pia, pium",m:"dutiful, devoted, kind (of a merciful character)",g:"Adjective. Vocative masculine singular, agreeing with Jesu.",e:"Pietas was the duty owed to gods, family and country. English pious, piety and pity all come from this family."},
+  jesu:{l:"Iesus, Iesu (m.)",m:"Jesus",g:"Noun with an irregular declension. Vocative singular, used when addressing him directly.",e:"From Greek Iesous, from Hebrew Yeshua, meaning the Lord saves."},
+  domine:{l:"dominus, domini (m.)",m:"lord, master",g:"Noun, 2nd declension. Vocative singular (the nominative is dominus). Like Pie Jesu, it addresses him directly.",e:"From domus, house: the master of the house. Related to English dominate, dominion and domain."},
+  dona:{l:"donare, donavi, donatum",m:"to give, to grant",g:"Verb, 1st conjugation. Present imperative active, 2nd person singular: a plea or command, grant!",e:"From donum, gift. English donate, donor and pardon are related."},
+  eis:{l:"is, ea, id",m:"he, she, it, that (here: to them)",g:"Pronoun. Dative plural, to them: the indirect object of dona. In the Requiem it refers to the departed.",e:"The ordinary Latin word for that or he/she/it."},
+  requiem:{l:"requies, requietis (f.)",m:"rest, repose",g:"Noun, 3rd declension. Accusative singular, the direct object of dona: grant them rest.",e:"From re- plus quies, quiet. Related to English quiet and quiescent. The Mass for the dead is named from its opening words, Requiem aeternam."},
+  sempiternam:{l:"sempiternus, -a, -um",m:"everlasting, eternal",g:"Adjective. Accusative singular feminine, agreeing with requiem: everlasting rest.",e:"From semper (always) plus aeternus (lasting, from aevum, age). English sempiternal."}
+ },
+ stanzas:[
+ ["Pie Jesu Domine|Dona eis requiem","Merciful Lord Jesus / grant them rest."],
+ ["Pie Jesu Domine|Dona eis requiem|Sempiternam requiem","Merciful Lord Jesus / grant them rest / everlasting rest."]
+ ]
+},{
+ id:"miserere",title:"Allegri: Miserere",sub:"Psalm 51 (Psalm 50 in the Vulgate) · Latin with English",
+ yt:"Wm593SYT-_E",ytUrl:"https://youtu.be/Wm593SYT-_E",
+ stanzas:[
+ ["Miserere mei, Deus|Secundum magnam misericordiam tuam","Have mercy on me, O God / according to your great mercy."],
+ ["Et secundum multitudinem miserationum tuarum|Dele iniquitatem meam","And according to the multitude of your compassions / blot out my iniquity."],
+ ["Amplius lava me ab iniquitate mea|Et a peccato meo munda me","Wash me yet more from my iniquity / and cleanse me from my sin."],
+ ["Quoniam iniquitatem meam ego cognosco|Et peccatum meum contra me est semper","For I acknowledge my iniquity / and my sin is always before me."],
+ ["Tibi soli peccavi, et malum coram te feci|Ut iustificeris in sermonibus tuis, et vincas cum iudicaris","Against you alone have I sinned, and done evil in your sight / so that you are proved just in your words, and prevail when you are judged."],
+ ["Ecce enim in iniquitatibus conceptus sum|Et in peccatis concepit me mater mea","Behold, I was conceived in iniquity / and in sin my mother conceived me."],
+ ["Ecce enim veritatem dilexisti|Incerta et occulta sapientiae tuae manifestasti mihi","Behold, you have loved truth / the uncertain and hidden things of your wisdom you have made known to me."],
+ ["Asperges me hyssopo, et mundabor|Lavabis me, et super nivem dealbabor","You will sprinkle me with hyssop, and I shall be clean / you will wash me, and I shall be whiter than snow."],
+ ["Auditui meo dabis gaudium et laetitiam|Et exsultabunt ossa humiliata","You will give joy and gladness to my hearing / and the humbled bones will rejoice."],
+ ["Averte faciem tuam a peccatis meis|Et omnes iniquitates meas dele","Turn your face away from my sins / and blot out all my iniquities."],
+ ["Cor mundum crea in me, Deus|Et spiritum rectum innova in visceribus meis","Create in me a clean heart, O God / and renew a right spirit within me."],
+ ["Ne proiicias me a facie tua|Et spiritum sanctum tuum ne auferas a me","Do not cast me away from your presence / and do not take your holy spirit from me."],
+ ["Redde mihi laetitiam salutaris tui|Et spiritu principali confirma me","Restore to me the joy of your salvation / and strengthen me with a willing spirit."],
+ ["Docebo iniquos vias tuas|Et impii ad te convertentur","I will teach the unjust your ways / and the wicked shall turn back to you."],
+ ["Libera me de sanguinibus, Deus, Deus salutis meae|Et exsultabit lingua mea iustitiam tuam","Deliver me from bloodshed, O God, God of my salvation / and my tongue shall rejoice in your justice."],
+ ["Domine, labia mea aperies|Et os meum annuntiabit laudem tuam","O Lord, you will open my lips / and my mouth shall declare your praise."],
+ ["Quoniam si voluisses sacrificium, dedissem utique|Holocaustis non delectaberis","For if you had desired sacrifice, I would have given it / in burnt offerings you take no delight."],
+ ["Sacrificium Deo spiritus contribulatus|Cor contritum et humiliatum, Deus, non despicies","A troubled spirit is a sacrifice to God / a contrite and humbled heart, O God, you will not despise."],
+ ["Benigne fac, Domine, in bona voluntate tua Sion|Ut aedificentur muri Ierusalem","Deal kindly, O Lord, in your good pleasure with Zion / that the walls of Jerusalem may be built."],
+ ["Tunc acceptabis sacrificium iustitiae, oblationes et holocausta|Tunc imponent super altare tuum vitulos","Then you will accept the sacrifice of righteousness, offerings and burnt offerings / then they shall lay calves upon your altar."]
+ ]
+}];
+// Glossary lines: key|lemma|meaning|grammar   (or key|=otherkey|grammar to reuse lemma and meaning)
+const GT=`dies|dies, diei (m./f.)|day|noun, 5th decl.; nom. sg.
+die|=dies|abl. sg., on that day
+diem|=dies|acc. sg., after ante
+irae|ira, irae (f.)|wrath, anger|noun, 1st decl.; gen. sg., of wrath
+illa|ille, illa, illud|that|demonstrative; f. sg. (nom. with dies, abl. with die)
+solvet|solvere, solvo, solvi, solutum|to loosen, dissolve|verb, 3rd conj.; future 3rd sg.
+saeclum|saeclum (saeculum), -i (nt.)|age, world|noun, 2nd decl.; acc. sg.
+in|in|in, on, into|preposition; + abl. = in/on, + acc. = into
+favilla|favilla, -ae (f.)|glowing ash, embers|noun, 1st decl.; abl. sg.
+teste|testis, testis (m./f.)|witness|noun, 3rd decl.; abl. sg. (with David as witness)
+david|David|David|indeclinable name
+cum|cum|with; when|preposition + abl. (with), or conjunction (when)
+sibylla|Sibylla, -ae (f.)|the Sibyl, an ancient prophetess|noun, 1st decl.; abl. sg.
+quantus|quantus, -a, -um|how great|adj.; m. nom. sg.
+tremor|tremor, tremoris (m.)|trembling|noun, 3rd decl.; nom. sg.
+est|esse, sum, fui|to be|verb; present 3rd sg., is
+futurus|futurus, -a, -um|about to be|future participle of esse; est futurus = will be
+quando|quando|when|conjunction
+iudex|iudex, iudicis (m.)|judge|noun, 3rd decl.; nom. sg.
+venturus|venire, venio, veni, ventum|to come|future participle; est venturus = is about to come
+cuncta|cunctus, -a, -um|all, the whole|adj.; nt. acc. pl., all things
+stricte|stricte|strictly|adverb
+discussurus|discutere, discutio, discussi, discussum|to shake apart, examine|future participle; m. nom. sg., about to examine
+tuba|tuba, -ae (f.)|trumpet|noun, 1st decl.; nom. sg.
+mirum|mirus, -a, -um|wonderful, astonishing|adj.; m. acc. sg., agrees with sonum
+spargens|spargere, spargo, sparsi, sparsum|to scatter, spread|present participle; nom. sg., spreading (agrees with tuba)
+sonum|sonus, -i (m.)|sound|noun, 2nd decl.; acc. sg.
+per|per|through|preposition + acc.
+sepulcra|sepulcrum, -i (nt.)|tomb|noun, 2nd decl.; acc. pl.
+regionum|regio, regionis (f.)|region, district|noun, 3rd decl.; gen. pl.
+coget|cogere, cogo, coegi, coactum|to drive together, compel|verb, 3rd conj.; future 3rd sg.
+omnes|omnis, -e|all, every|adj.; acc. pl. (all people; or all my iniquities)
+ante|ante|before, in front of|preposition + acc.
+thronum|thronus, -i (m.)|throne|noun, 2nd decl.; acc. sg.
+mors|mors, mortis (f.)|death|noun, 3rd decl.; nom. sg.
+stupebit|stupere, stupeo, stupui|to be stunned|verb, 2nd conj.; future 3rd sg.
+et|et|and|conjunction
+natura|natura, -ae (f.)|nature|noun, 1st decl.; nom. sg.
+resurget|resurgere, resurgo, resurrexi|to rise again|verb, 3rd conj.; future 3rd sg.
+creatura|creatura, -ae (f.)|creature, creation|noun, 1st decl.; nom. sg.
+iudicanti|iudicare, iudico|to judge|present participle; dat. sg., to the one judging
+responsura|respondere, respondeo, respondi, responsum|to answer|future participle; f. nom. sg., about to answer
+liber|liber, libri (m.)|book|noun, 2nd decl.; nom. sg.
+scriptus|scribere, scribo, scripsi, scriptum|to write|perfect passive participle; m. nom. sg., written
+proferetur|proferre, profero|to bring forth|verb, irregular; future passive 3rd sg., will be brought forth
+quo|qui, quae, quod|who, which|relative pronoun; abl. sg., in which
+totum|totus, -a, -um|whole, all|adj.; nt. nom. sg., everything
+continetur|continere, contineo, continui|to hold together, contain|verb, 2nd conj.; present passive 3rd sg., is contained
+unde|unde|from where|adverb
+mundus|mundus, -i (m.)|world|noun, 2nd decl.; nom. sg.
+iudicetur|=iudicanti|verb, 1st conj.; present subjunctive passive 3rd sg., shall be judged
+ergo|ergo|therefore, then|adverb
+sedebit|sedere, sedeo, sedi, sessum|to sit|verb, 2nd conj.; future 3rd sg.
+quidquid|quidquid|whatever|indefinite relative; nt. nom. sg.
+latet|latere, lateo, latui|to lie hidden|verb, 2nd conj.; present 3rd sg.
+apparebit|apparere, appareo, apparui|to appear|verb, 2nd conj.; future 3rd sg.
+nil|nil (nihil)|nothing|indeclinable pronoun; subject
+inultum|inultus, -a, -um|unavenged, unpunished|adj.; nt. nom. sg., agrees with nil
+remanebit|remanere, remaneo, remansi|to remain|verb, 2nd conj.; future 3rd sg.
+quid|quis, quid|who? what?|interrogative pronoun; nt. acc. sg., what?
+sum|esse, sum, fui|to be|verb; present 1st sg., I am (also conceptus sum = I was conceived)
+miser|miser, misera, miserum|wretched|adj.; m. nom. sg. (the speaker)
+tunc|tunc|then|adverb
+dicturus|dicere, dico, dixi, dictum|to say|future participle; m. nom. sg.; sum dicturus = I shall say
+quem|qui, quae, quod|which? who?|interrogative adj.; m. acc. sg., agrees with patronum
+patronum|patronus, -i (m.)|protector, advocate|noun, 2nd decl.; acc. sg.
+rogaturus|rogare, rogo, rogavi, rogatum|to ask|future participle; m. nom. sg., about to ask
+vix|vix|hardly, scarcely|adverb
+iustus|iustus, -a, -um|just, righteous|adj.; m. nom. sg., the righteous man
+sit|=est|verb; present subjunctive 3rd sg.
+securus|securus, -a, -um|safe, free from care|adj.; m. nom. sg.
+rex|rex, regis (m.)|king|noun, 3rd decl.; voc. sg.
+tremendae|tremendus, -a, -um|dreadful, to be feared|gerundive; f. gen. sg., agrees with maiestatis
+maiestatis|maiestas, maiestatis (f.)|majesty|noun, 3rd decl.; gen. sg.
+qui|qui, quae, quod|who|relative pronoun; m. nom. sg.
+salvandos|salvare, salvo, salvavi, salvatum|to save|gerundive; m. acc. pl., those to be saved
+salvas|=salvandos|verb, 1st conj.; present 2nd sg., you save
+salva|=salvandos|imperative 2nd sg., save!
+gratis|gratis|freely, for nothing|adverb
+me|ego, mei|I, me|personal pronoun; acc. sg., me
+fons|fons, fontis (m.)|spring, fountain|noun, 3rd decl.; voc. sg.
+pietatis|pietas, pietatis (f.)|mercy, compassion, dutifulness|noun, 3rd decl.; gen. sg.
+recordare|recordari, recordor|to remember|deponent verb; imperative 2nd sg., remember!
+quod|quod|that, because|conjunction
+causa|causa, -ae (f.)|cause, reason|noun, 1st decl.; nom. sg. (predicate)
+viae|via, viae (f.)|way, journey|noun, 1st decl.; gen. sg.
+vias|=viae|acc. pl.
+ne|ne|lest; not|conjunction; with subjunctive = negative command or purpose
+perdas|perdere, perdo, perdidi, perditum|to destroy, lose|verb, 3rd conj.; present subjunctive 2nd sg.; ne perdas = do not lose
+quaerens|quaerere, quaero, quaesivi, quaesitum|to seek|present participle; nom. sg., seeking
+sedisti|=sedebit|verb, 2nd conj.; perfect 2nd sg., you sat
+lassus|lassus, -a, -um|weary|adj.; m. nom. sg.
+redemisti|redimere, redimo, redemi, redemptum|to redeem, buy back|verb, 3rd conj.; perfect 2nd sg.
+crucem|crux, crucis (f.)|cross|noun, 3rd decl.; acc. sg.
+passus|pati, patior, passus sum|to suffer, endure|deponent; perfect participle, m. nom. sg., having suffered
+tantus|tantus, -a, -um|so great|adj.; m. nom. sg.
+labor|labor, laboris (m.)|toil, labour|noun, 3rd decl.; nom. sg.
+non|non|not|adverb
+cassus|cassus, -a, -um|empty, in vain|adj.; m. nom. sg.
+iuste|=iustus|adj.; m. voc. sg., O righteous
+ultionis|ultio, ultionis (f.)|vengeance|noun, 3rd decl.; gen. sg.
+donum|donum, -i (nt.)|gift|noun, 2nd decl.; acc. sg.
+fac|facere, facio, feci, factum|to make, do|verb; imperative 2nd sg. (irregular fac), make, grant
+remissionis|remissio, remissionis (f.)|forgiveness, release|noun, 3rd decl.; gen. sg.
+rationis|ratio, rationis (f.)|reckoning, account|noun, 3rd decl.; gen. sg.
+ingemisco|ingemiscere, ingemisco|to groan|verb, 3rd conj.; present 1st sg.
+tamquam|tamquam|as, like|adverb/conjunction
+reus|reus, -i (m.)|the accused, guilty party|noun, 2nd decl.; nom. sg.
+culpa|culpa, -ae (f.)|guilt, fault|noun, 1st decl.; abl. sg.
+rubet|rubere, rubeo|to be red|verb, 2nd conj.; present 3rd sg.
+vultus|vultus, -us (m.)|face|noun, 4th decl.; nom. sg.
+supplicanti|supplicare, supplico|to plead, kneel|present participle; dat. sg., to the suppliant
+parce|parcere, parco, peperci|to spare|verb, 3rd conj. + dat.; imperative 2nd sg.
+deus|deus, dei (m.)|God|noun, 2nd decl.; voc. sg., O God
+mariam|Maria, -ae (f.)|Mary (Magdalene)|noun, 1st decl.; acc. sg.
+absolvisti|absolvere, absolvo, absolvi, absolutum|to release, absolve|verb, 3rd conj.; perfect 2nd sg. (contracted)
+latronem|latro, latronis (m.)|robber, bandit|noun, 3rd decl.; acc. sg. (the penitent thief)
+exaudisti|exaudire, exaudio|to hear favourably|verb, 4th conj.; perfect 2nd sg. (contracted)
+mihi|ego, mei|I, me|personal pronoun; dat. sg., to me
+quoque|quoque|also|adverb
+spem|spes, spei (f.)|hope|noun, 5th decl.; acc. sg.
+dedisti|dare, do, dedi, datum|to give|verb, 1st conj.; perfect 2nd sg., you have given
+preces|prex, precis (f.)|prayer|noun, 3rd decl.; nom. pl.
+sunt|=est|verb; present 3rd pl., are
+dignae|dignus, -a, -um|worthy|adj.; f. nom. pl.
+sed|sed|but|conjunction
+tu|tu|you|personal pronoun; nom. sg.
+bonus|bonus, -a, -um|good|adj.; m. nom. sg.
+benigne|benigne|kindly, graciously|adverb (from benignus)
+perenni|perennis, -e|everlasting|adj.; abl. sg., agrees with igne
+cremer|cremare, cremo|to burn|verb, 1st conj.; present subjunctive passive 1st sg., I be burned
+igne|ignis, ignis (m.)|fire|noun, 3rd decl.; abl. sg.
+inter|inter|among, between|preposition + acc.
+oves|ovis, ovis (f.)|sheep|noun, 3rd decl.; acc. pl.
+locum|locus, -i (m.)|place|noun, 2nd decl.; acc. sg.
+praesta|praestare, praesto, praestiti|to grant, provide|verb, 1st conj.; imperative 2nd sg.
+ab|ab (a)|from, away from|preposition + abl. (a before consonants)
+a|=ab|preposition + abl.
+haedis|haedus, -i (m.)|kid, young goat|noun, 2nd decl.; abl. pl.
+sequestra|sequestrare, sequestro|to set apart, separate|verb, 1st conj.; imperative 2nd sg.
+statuens|statuere, statuo, statui, statutum|to set, place|present participle; nom. sg., placing
+parte|pars, partis (f.)|part, side|noun, 3rd decl.; abl. sg.
+dextra|dexter, dextra, dextrum|right (hand, side)|adj.; f. abl. sg., agrees with parte
+confutatis|confutare, confuto|to confound, silence|perfect passive participle; abl. pl., ablative absolute with maledictis
+maledictis|maledictus, -a, -um|accursed|adj. as noun; m. abl. pl., the accursed
+flammis|flamma, -ae (f.)|flame|noun, 1st decl.; dat. pl., to flames
+acribus|acer, acris, acre|sharp, bitter, fierce|adj.; dat. pl., agrees with flammis
+addictis|addicere, addico, addixi, addictum|to assign, doom to|perfect passive participle; abl. pl., consigned
+voca|vocare, voco, vocavi, vocatum|to call|verb, 1st conj.; imperative 2nd sg.
+benedictis|benedictus, -a, -um|blessed|adj. as noun; m. abl. pl., the blessed
+oro|orare, oro, oravi, oratum|to pray, plead|verb, 1st conj.; present 1st sg.
+supplex|supplex, supplicis|kneeling, humbly begging|adj.; nom. sg.
+acclinis|acclinis, -e|leaning, bowed down|adj.; nom. sg.
+cor|cor, cordis (nt.)|heart|noun, 3rd decl.; nom./acc. sg.
+contritum|conterere, contero, contrivi, contritum|to crush, grind down|perfect passive participle; nt. nom./acc. sg., crushed
+quasi|quasi|as if, like|adverb
+cinis|cinis, cineris (m.)|ash|noun, 3rd decl.; nom. sg.
+gere|gerere, gero, gessi, gestum|to carry, manage|verb, 3rd conj.; imperative 2nd sg.; gere curam = take care of
+curam|cura, -ae (f.)|care, concern|noun, 1st decl.; acc. sg.
+mei|ego, mei / meus, -a, -um|of me / of my|ego gen. sg. (miserere mei = pity me), or meus m. gen. sg. (mei finis = of my end)
+finis|finis, finis (m.)|end|noun, 3rd decl.; gen. sg., of my end
+lacrimosa|lacrimosus, -a, -um|tearful|adj.; f. nom. sg., agrees with dies
+qua|qui, quae, quod|which|relative pronoun; f. abl. sg., on which
+ex|ex (e)|out of, from|preposition + abl.
+iudicandus|=iudicanti|gerundive; m. nom. sg., to be judged
+homo|homo, hominis (m.)|human being, man|noun, 3rd decl.; nom. sg.
+huic|hic, haec, hoc|this|demonstrative; dat. sg., to this one
+amen|amen|so be it|indeclinable (Hebrew)
+miserere|misereri, misereor|to pity|deponent verb + gen.; imperative 2nd sg., have mercy
+secundum|secundum|according to|preposition + acc.
+magnam|magnus, -a, -um|great|adj.; f. acc. sg.
+misericordiam|misericordia, -ae (f.)|mercy|noun, 1st decl.; acc. sg.
+multitudinem|multitudo, multitudinis (f.)|multitude|noun, 3rd decl.; acc. sg.
+miserationum|miseratio, miserationis (f.)|compassion|noun, 3rd decl.; gen. pl.
+dele|delere, deleo, delevi, deletum|to blot out, destroy|verb, 2nd conj.; imperative 2nd sg.
+iniquitatem|iniquitas, iniquitatis (f.)|wrongdoing, injustice|noun, 3rd decl.; acc. sg.
+iniquitate|=iniquitatem|abl. sg.
+iniquitatibus|=iniquitatem|abl. pl.
+iniquitates|=iniquitatem|acc. pl.
+amplius|amplius|more, further|adverb (comparative)
+lava|lavare, lavo, lavi, lautum|to wash|verb, 1st conj.; imperative 2nd sg.
+peccato|peccatum, -i (nt.)|sin|noun, 2nd decl.; abl. sg.
+peccatum|=peccato|nom. sg.
+peccatis|=peccato|abl. pl.
+munda|mundare, mundo|to cleanse|verb, 1st conj.; imperative 2nd sg.
+quoniam|quoniam|because, for|conjunction
+ego|ego|I|personal pronoun; nom.
+cognosco|cognoscere, cognosco, cognovi, cognitum|to know, acknowledge|verb, 3rd conj.; present 1st sg.
+contra|contra|against|preposition + acc.
+semper|semper|always|adverb
+tibi|tu|you|personal pronoun; dat. sg., to you
+soli|solus, -a, -um|alone, only|adj.; dat. sg., agrees with tibi
+peccavi|peccare, pecco, peccavi, peccatum|to sin|verb, 1st conj.; perfect 1st sg.
+malum|malum, -i (nt.)|evil, wrong|noun, 2nd decl.; acc. sg.
+coram|coram|in the presence of|preposition + abl.
+te|=tibi|abl. sg. (after coram) or acc. sg.
+feci|=fac|perfect 1st sg., I did
+ut|ut|so that|conjunction + subjunctive
+iustificeris|iustificare, iustifico|to justify, declare righteous|verb, 1st conj.; present subjunctive passive 2nd sg.
+sermonibus|sermo, sermonis (m.)|speech, word|noun, 3rd decl.; abl. pl.
+vincas|vincere, vinco, vici, victum|to conquer, prevail|verb, 3rd conj.; present subjunctive 2nd sg.
+iudicaris|=iudicanti|present passive 2nd sg., you are judged
+ecce|ecce|behold|interjection
+enim|enim|for, indeed|conjunction
+conceptus|concipere, concipio, concepi, conceptum|to conceive|perfect passive participle; m. nom. sg.; conceptus sum = I was conceived
+concepit|=conceptus|perfect 3rd sg., conceived
+mater|mater, matris (f.)|mother|noun, 3rd decl.; nom. sg.
+veritatem|veritas, veritatis (f.)|truth|noun, 3rd decl.; acc. sg.
+dilexisti|diligere, diligo, dilexi, dilectum|to love, esteem|verb, 3rd conj.; perfect 2nd sg. (contracted)
+incerta|incertus, -a, -um|uncertain, unknown|adj.; nt. acc. pl.
+occulta|occultus, -a, -um|hidden|adj.; nt. acc. pl.
+sapientiae|sapientia, -ae (f.)|wisdom|noun, 1st decl.; gen. sg.
+manifestasti|manifestare, manifesto|to reveal|verb, 1st conj.; perfect 2nd sg. (contracted)
+asperges|aspergere, aspergo, aspersi, aspersum|to sprinkle|verb, 3rd conj.; future 2nd sg.
+hyssopo|hyssopus, -i (m.)|hyssop, a herb used in ritual cleansing|noun, 2nd decl.; abl. sg.
+mundabor|=munda|future passive 1st sg., I shall be cleansed
+lavabis|=lava|future 2nd sg., you will wash
+super|super|above, over|preposition + acc.
+nivem|nix, nivis (f.)|snow|noun, 3rd decl.; acc. sg.
+dealbabor|dealbare, dealbo|to whiten|verb, 1st conj.; future passive 1st sg., I shall be whitened
+auditui|auditus, -us (m.)|hearing|noun, 4th decl.; dat. sg.
+dabis|=dedisti|future 2nd sg., you will give
+gaudium|gaudium, -i (nt.)|joy|noun, 2nd decl.; acc. sg.
+laetitiam|laetitia, -ae (f.)|gladness|noun, 1st decl.; acc. sg.
+exsultabunt|exsultare, exsulto|to leap for joy, exult|verb, 1st conj.; future 3rd pl.
+exsultabit|=exsultabunt|future 3rd sg.
+ossa|os, ossis (nt.)|bone|noun, 3rd decl.; nom. pl.
+humiliata|humiliare, humilio|to humble|perfect passive participle; nt. nom. pl., agrees with ossa
+humiliatum|=humiliata|nt. nom./acc. sg., agrees with cor
+averte|avertere, averto, averti, aversum|to turn away|verb, 3rd conj.; imperative 2nd sg.
+faciem|facies, faciei (f.)|face|noun, 5th decl.; acc. sg.
+facie|=faciem|abl. sg.
+crea|creare, creo, creavi, creatum|to create|verb, 1st conj.; imperative 2nd sg.
+mundum|mundus, -a, -um|clean, pure|adj.; nt. acc. sg., agrees with cor
+spiritum|spiritus, -us (m.)|spirit, breath|noun, 4th decl.; acc. sg.
+spiritu|=spiritum|abl. sg.
+spiritus|=spiritum|nom. sg.
+rectum|rectus, -a, -um|straight, upright|adj.; m. acc. sg., agrees with spiritum
+innova|innovare, innovo|to renew|verb, 1st conj.; imperative 2nd sg.
+visceribus|viscus, visceris (nt.)|inner organ (pl. inmost parts)|noun, 3rd decl.; abl. pl.
+proiicias|proicere, proicio, proieci, proiectum|to cast away|verb, 3rd conj.; present subjunctive 2nd sg.; ne proiicias = do not cast away
+sanctum|sanctus, -a, -um|holy|adj.; m. acc. sg., agrees with spiritum
+auferas|auferre, aufero, abstuli, ablatum|to take away|verb, irregular; present subjunctive 2nd sg.; ne auferas = do not take away
+redde|reddere, reddo, reddidi, redditum|to give back, restore|verb, 3rd conj.; imperative 2nd sg.
+salutaris|salutare, salutaris (nt.)|salvation, saving help|noun, 3rd decl. (from adj. salutaris); gen. sg.
+principali|principalis, -e|chief, ruling|adj.; abl. sg., agrees with spiritu
+confirma|confirmare, confirmo|to strengthen|verb, 1st conj.; imperative 2nd sg.
+docebo|docere, doceo, docui, doctum|to teach|verb, 2nd conj.; future 1st sg.
+iniquos|iniquus, -a, -um|unjust|adj. as noun; m. acc. pl., the unjust
+impii|impius, -a, -um|ungodly, wicked|adj. as noun; m. nom. pl.
+ad|ad|to, toward|preposition + acc.
+convertentur|convertere, converto, converti, conversum|to turn around|verb, 3rd conj.; future passive 3rd pl.
+libera|liberare, libero|to free, deliver|verb, 1st conj.; imperative 2nd sg.
+de|de|from, concerning|preposition + abl.
+sanguinibus|sanguis, sanguinis (m.)|blood|noun, 3rd decl.; abl. pl., bloodshed
+salutis|salus, salutis (f.)|safety, salvation|noun, 3rd decl.; gen. sg.
+lingua|lingua, -ae (f.)|tongue, language|noun, 1st decl.; nom. sg.
+iustitiam|iustitia, -ae (f.)|justice, righteousness|noun, 1st decl.; acc. sg.
+iustitiae|=iustitiam|gen. sg., of righteousness
+labia|labium, -i (nt.)|lip|noun, 2nd decl.; acc. pl.
+aperies|aperire, aperio, aperui, apertum|to open|verb, 4th conj.; future 2nd sg.
+os|os, oris (nt.)|mouth|noun, 3rd decl.; nom. sg.
+annuntiabit|annuntiare, annuntio|to announce, declare|verb, 1st conj.; future 3rd sg.
+laudem|laus, laudis (f.)|praise|noun, 3rd decl.; acc. sg.
+si|si|if|conjunction
+voluisses|velle, volo, volui|to wish|verb, irregular; pluperfect subjunctive 2nd sg., you had wished
+sacrificium|sacrificium, -i (nt.)|sacrifice|noun, 2nd decl.; acc. sg.
+dedissem|=dedisti|pluperfect subjunctive 1st sg., I would have given
+utique|utique|certainly|adverb
+holocaustis|holocaustum, -i (nt.)|burnt offering|noun, 2nd decl.; abl. pl.
+holocausta|=holocaustis|acc. pl.
+delectaberis|delectare, delecto|to delight, please|verb, 1st conj.; future passive 2nd sg., you will take delight
+deo|=deus|dat. sg., to God
+contribulatus|contribulare, contribulo|to crush, trouble greatly|perfect passive participle; m. nom. sg., troubled
+despicies|despicere, despicio, despexi, despectum|to look down on, despise|verb, 3rd conj.; future 2nd sg.
+bona|=bonus|f. abl. sg., agrees with voluntate
+voluntate|voluntas, voluntatis (f.)|will, goodwill|noun, 3rd decl.; abl. sg.
+sion|Sion|Zion|indeclinable place name; here dat., to Zion
+aedificentur|aedificare, aedifico|to build|verb, 1st conj.; present subjunctive passive 3rd pl.
+muri|murus, -i (m.)|wall|noun, 2nd decl.; nom. pl.
+ierusalem|Ierusalem|Jerusalem|indeclinable; here gen., of Jerusalem
+acceptabis|acceptare, accepto|to accept|verb, 1st conj.; future 2nd sg.
+oblationes|oblatio, oblationis (f.)|offering|noun, 3rd decl.; acc. pl.
+imponent|imponere, impono, imposui, impositum|to lay upon|verb, 3rd conj.; future 3rd pl.
+altare|altare, altaris (nt.)|altar|noun, 3rd decl.; acc. sg.
+vitulos|vitulus, -i (m.)|calf|noun, 2nd decl.; acc. pl.
+tuae|tuus, -a, -um|your|adj.; f. gen. sg.
+tuam|=tuae|f. acc. sg.
+tuas|=tuae|f. acc. pl.
+tuarum|=tuae|f. gen. pl.
+tuis|=tuae|abl. pl.
+tua|=tuae|f. abl. sg.
+tuum|=tuae|m./nt. acc. sg.
+tui|=tuae|nt. gen. sg.
+meus|meus, -a, -um|my|adj.; m. nom. sg.
+meam|=meus|f. acc. sg.
+mea|=meus|f. nom./abl. sg.
+meo|=meus|nt. abl. sg.
+meum|=meus|nt. nom./acc. sg.
+meis|=meus|abl. pl.
+meas|=meus|f. acc. pl.
+meae|=meus|f. gen. sg. or nom. pl.`;
+const G={};
+GT.trim().split('\n').forEach(r=>{const p=r.split('|');if(p[1][0]==='='){const b=G[p[1].slice(1)];G[p[0]]={l:b.l,m:b.m,g:p[2]}}else G[p[0]]={l:p[1],m:p[2],g:p[3]}});
+const PJ=SONGS[1].gloss;
+SONGS[0].gloss=Object.assign({},G,PJ,{iesu:PJ.jesu});
+SONGS[2].gloss=Object.assign({},G,{domine:PJ.domine});
+const $=id=>document.getElementById(id);
+function latin(str,gloss,en,title){
+ const f=document.createDocumentFragment();
+ str.split('|').forEach(line=>{
+  const d=document.createElement('div');
+  line.split(/(\s+)/).forEach(tok=>{
+   const k=tok.toLowerCase().replace(/[^a-z]/g,'');
+   if(gloss&&gloss[k]){
+    const w=document.createElement('span');w.className='w';w.tabIndex=0;w.setAttribute('role','button');w.textContent=tok;
+    w.onclick=e=>{e.stopPropagation();openP(w,tok.replace(/[^A-Za-z]/g,''),gloss[k],line,en,title)};
+    w.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();w.click()}};
+    d.appendChild(w);
+   }else d.appendChild(document.createTextNode(tok));
+  });
+  f.appendChild(d)});
+ return f}
+function openP(w,word,g,line,en,title){
+ document.querySelectorAll('.w.on').forEach(x=>x.classList.remove('on'));
+ w.classList.add('on');
+ $('pw').textContent=word;$('pl').textContent=g.l+'  \u00b7  '+g.m;$('pg').textContent=g.g;$('pe').textContent=g.e||'';
+ const q='Please parse this Latin line from "'+title+'" (church music), word by word, giving dictionary form, grammar, meaning and any interesting etymology. Line: '+line+' English translation of the verse: '+en+' I tapped the word: '+word;
+ const pa=$('pa');pa.textContent='';
+ [['Ask Claude about this line','https://claude.ai/new?q='],['Ask ChatGPT','https://chatgpt.com/?q=']].forEach(([t,u])=>{const a=document.createElement('a');a.href=u+encodeURIComponent(q);a.target='_blank';a.rel='noopener';a.textContent=t;pa.appendChild(a)});
+ $('panel').style.display='block';document.body.classList.add('pn');
+}
+function closeP(){
+ document.querySelectorAll('.w.on').forEach(x=>x.classList.remove('on'));
+ $('panel').style.display='none';document.body.classList.remove('pn');
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#panel'))closeP()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeP()});
+$('px').onclick=closeP;
+function lines(s,sep){const f=document.createDocumentFragment();s.split(sep).forEach(t=>{const d=document.createElement('div');d.textContent=t.trim();f.appendChild(d)});return f}
+function show(i){
+ const s=SONGS[i];
+ document.querySelectorAll('.tab').forEach((b,j)=>b.classList.toggle('on',j===i));
+ $('text').scrollTop=0;closeP();$('hint').style.display=s.gloss?'':'none';
+ $('title').textContent=s.title;$('sub').textContent=s.sub;
+ const p=$('player');p.textContent='';
+ p.style.display='none';
+ const l=$('links');l.textContent='';
+ if(s.ytUrl){const a=document.createElement('a');a.href=s.ytUrl;a.target='_blank';a.rel='noopener';a.className='btn';a.textContent='▶ Play on YouTube';l.appendChild(a)}
+ if(s.spotify){const a=document.createElement('a');a.href=s.spotify;a.target='_blank';a.rel='noopener';a.className='btn';a.textContent='▶ Play on Spotify';l.appendChild(a)}
+ const t=$('text');t.textContent='';
+ s.stanzas.forEach((st,n)=>{
+  const c=document.createElement('section');c.className='st';
+  const h=document.createElement('p');h.className='num';h.textContent='Verse '+(n+1);
+  const la=document.createElement('div');la.className='la';la.appendChild(latin(st[0],s.gloss,st[1],s.title));
+  const en=document.createElement('div');en.className='en';en.appendChild(lines(st[1],' / '));
+  c.append(h,la,en);t.appendChild(c);
+ });
+}
+const pick=$('pick');
+SONGS.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='tab';b.textContent=s.title;b.onclick=()=>show(i);pick.appendChild(b)});
+if(SONGS.length<2)pick.style.display='none';
+show(0);
+</script>
+</body>
+</html>
